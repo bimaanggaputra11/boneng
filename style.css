@@ -247,14 +247,65 @@ body {
     100% { transform: scale(1); }
 }
 
+.queue-section, .winners-section {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.queue-section h3, .winners-section h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.address-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.address-tag {
+    background: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #666;
+}
+
+.address-tag.winner {
+    background: #ffd700;
+    color: #333;
+}
+
+.hidden {
+    display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header h1 {
         font-size: 2rem;
     }
     
-    .wheel-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    .wheel-circle {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .wheel-slot {
+        width: 45px;
+        height: 25px;
+        font-size: 9px;
+        transform-origin: 50% 135px;
+    }
+    
+    .wheel-center {
+        width: 80px;
+        height: 80px;
+        font-size: 10px;
     }
     
     .stats-grid {

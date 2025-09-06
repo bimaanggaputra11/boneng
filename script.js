@@ -279,8 +279,17 @@ function performSpin() {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Load saved data first
+    loadData();
+    
+    // Initialize display
     initializeWheel();
     updateDisplay();
+    
+    // Start timer if there are participants
+    if (wheelSlots.some(slot => slot !== null)) {
+        startTimer();
+    }
     
     // Allow Enter key to validate address
     document.getElementById('walletAddress').addEventListener('keypress', function(e) {
