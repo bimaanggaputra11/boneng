@@ -11,7 +11,7 @@ let queueList = [];
 let winnersList = [];
 let currentUser = null;
 let spinInterval = null;
-let timeRemaining = 1 * 60;
+let timeRemaining = 5 * 60;
 
 // ⏱️ Update countdown dari Supabase
 let spinTimestamp = null;
@@ -28,12 +28,12 @@ async function fetchSpinTimestamp() {
   if (data?.value) {
     spinTimestamp = parseInt(data.value);
     const elapsed = Math.floor((Date.now() - spinTimestamp) / 1000);
-    const countdown = 15 * 60 - elapsed;
+    const countdown = 5 * 60 - elapsed;
     timeRemaining = countdown > 0 ? countdown : 0;
   } else {
     // Jika belum ada, inisialisasi
     await updateSpinTimestamp();
-    timeRemaining = 15 * 60;
+    timeRemaining = 5 * 60;
   }
 }
 
@@ -138,7 +138,7 @@ async function validateAddress() {
   if (isHolder) {
     currentUser = address;
     showMessage('✅ Verification successful! Entering Lucky Wheel...', 'success');
-    setTimeout(() => enterWheel(), 1500);
+    setTimeout(() => enterWheel(), 500);
   } else {
     showMessage('❌ You are not a token holder. Access denied.', 'error');
   }
@@ -214,7 +214,7 @@ function startTimer() {
 
     if (timeRemaining <= 0) {
       performSpin();
-      timeRemaining = 15 * 60;
+      timeRemaining = 5 * 60;
     }
   }, 1000);
 }
