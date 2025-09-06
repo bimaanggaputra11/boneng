@@ -277,7 +277,7 @@ body {
 
 .address-tag.winner {
     background: #ffd700;
-    color: #996464;
+    color: #333;
 }
 
 .hidden {
@@ -290,22 +290,33 @@ body {
         font-size: 2rem;
     }
     
-    .wheel-circle {
+    .wheel-container-circle {
         width: 300px;
         height: 300px;
     }
     
+    .wheel-segment {
+        height: 140px;
+        transform-origin: 50% 140px;
+    }
+    
     .wheel-slot {
-        width: 45px;
-        height: 25px;
-        font-size: 9px;
-        transform-origin: 50% 135px;
+        width: 35px;
+        height: 20px;
+        font-size: 8px;
     }
     
     .wheel-center {
-        width: 80px;
-        height: 80px;
-        font-size: 10px;
+        width: 90px;
+        height: 90px;
+    }
+    
+    .center-icon {
+        font-size: 20px;
+    }
+    
+    .center-text {
+        font-size: 9px;
     }
     
     .stats-grid {
