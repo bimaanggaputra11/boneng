@@ -49,10 +49,11 @@ async function saveData() {
     }
 
     for (const winner of winnersList) {
-  await supabase.from('winners_list').insert(
-    { address: winner, timestamp: new Date().toISOString() },
-    { onConflict: ['address', 'timestamp'] }
-  );
+await supabase.from('winners_list').insert({
+  address: winner,
+  timestamp: new Date().toISOString()
+});
+
 }
 
 
@@ -68,7 +69,10 @@ async function loadData() {
   try {
     const { data: slotsData } = await supabase.from('wheel_slots').select('*').order('slot_index', { ascending: true });
     wheelSlots = Array(50).fill(null);
-    for (const slot of slotsData) wheelSlots[slot.slot_index] = slot.address;
+    for (const slot of slotsData) {
+        if (!winnerlist.includes(slotaddress)) wheelSlots[slot.slot_index] = slot.address;
+    }
+
 
     const { data: queueData } = await supabase.from('queue_list').select('*').order('id', { ascending: true });
     queueList = queueData ? queueData.map(q => q.address) : [];
@@ -162,7 +166,12 @@ async function enterWheel() {
 }
 
 function addUserToSystem(address) {
-  if (wheelSlots.includes(address) || queueList.includes(address)) return;
+  if (
+    winnersList.includes(address) ||  // Sudah menang
+    wheelSlots.includes(address) || 
+    queueList.includes(address)
+  ) return;
+
   const empty = wheelSlots.findIndex(slot => !slot);
   if (empty !== -1) {
     wheelSlots[empty] = address;
@@ -173,6 +182,7 @@ function addUserToSystem(address) {
   updateDisplay();
   saveData();
 }
+
 
 function updateDisplay() {
   initializeWheel();
