@@ -7,7 +7,7 @@ let spinInterval = null;
 let timeRemaining = 15 * 60; // 15 minutes in seconds
 
 // Token mint address - you can change this
-const TOKEN_MINT = "YOUR_TOKEN_MINT_ADDRESS_HERE";
+const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
 
 // Initialize wheel grid
 function initializeWheel() {
