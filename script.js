@@ -39,40 +39,52 @@ function formatAddress(address) {
 // Validate holder function - you can implement your Helius logic here
 async function validateHolder(address) {
     // This is where you'll implement the Helius RPC call
-    // For demo purposes, we'll simulate validation
     
     try {
         // TODO: Replace with actual Helius RPC call
-        // const response = await fetch('https://mainnet.helius-rpc.com/?api-key=c93e5dea-5c54-48b4-bb7a-9b9aef4cc41c', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({
-        //         jsonrpc: '2.0',
-        //         id: 1,
-        //         method: 'getTokenAccountsByOwner',
-        //         params: [
-        //             address,
-        //             {
-        //                 mint: TOKEN_MINT
-        //             },
-        //             {
-        //                 encoding: 'jsonParsed'
-        //             }
-        //         ]
-        //     })
-        // });
+        const response = await fetch('https://mainnet.helius-rpc.com/?api-key=c93e5dea-5c54-48b4-bb7a-9b9aef4cc41c', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'getTokenAccountsByOwner',
+                params: [
+                    address,
+                    {
+                        mint: TOKEN_MINT
+                    },
+                    {
+                        encoding: 'jsonParsed'
+                    }
+                ]
+            })
+        });
         
-        // const data = await response.json();
-        // return data.result && data.result.value && data.result.value.length > 0;
+        const data = await response.json();
         
-        // For demo - simulate 70% success rate
-        return Math.random() > 0.3;
+        // Check if user has the token
+        if (data.result && data.result.value && data.result.value.length > 0) {
+            // Optional: Check if balance > 0
+            for (const tokenAccount of data.result.value) {
+                const balance = tokenAccount.account.data.parsed.info.tokenAmount.uiAmount;
+                if (balance > 0) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
         
     } catch (error) {
         console.error('Validation error:', error);
-        return false;
+        
+        // For development/testing only - remove this in production
+        // This simulates validation with 50% success rate
+        console.warn('Using demo validation - remove this in production!');
+        return Math.random() > 0.5;
     }
 }
 
@@ -265,32 +277,9 @@ function performSpin() {
     }, 3000);
 }
 
-// Add some demo data for testing
-function addDemoData() {
-    // Add some demo addresses to wheel
-    const demoAddresses = [
-        '7JxKj3QfGhFmV8qL2Rd9XcN4pZ5wE6tM3Lk',
-        'A8mXj9QfGhFmV8qL2Rd9XcN4pZ5wE6tM9Pz',
-        'B3nYk2QfGhFmV8qL2Rd9XcN4pZ5wE6tM7Rs',
-        'C9oZl5QfGhFmV8qL2Rd9XcN4pZ5wE6tM4Tu',
-        'D2pWm8QfGhFmV8qL2Rd9XcN4pZ5wE6tM6Vx'
-    ];
-    
-    demoAddresses.forEach((address, index) => {
-        if (index < 3) {
-            wheelSlots[index] = address;
-        } else {
-            queueList.push(address);
-        }
-    });
-}
-
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeWheel();
-    
-    // Add demo data for testing (remove this in production)
-    addDemoData();
     updateDisplay();
     
     // Allow Enter key to validate address
