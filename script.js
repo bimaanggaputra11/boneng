@@ -1,3 +1,13 @@
+// Import dan inisialisasi Supabase (kalau kamu pake bundler, ini harus di import dari package, kalau di browser pakai script tag terpisah)
+const SUPABASE_URL = 'https://bewuevhfiehsjofvwpbi.supabase.co'; // Ganti dengan URL project kamu
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJld3VldmhmaWVoc2pvZnZ3cGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjA1MDEsImV4cCI6MjA3MjczNjUwMX0.o7KJ4gkbfZKYy3lvuV63yGM5XCnk5xk4vCLv46hNAII'; // Ganti dengan anon key kamu
+
+const supabase = supabase = supabase || null;
+if (!supabase) {
+    window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+const supabaseClient = window.supabase;
+
 // Global variables
 let wheelSlots = Array(50).fill(null);
 let queueList = [];
@@ -9,25 +19,90 @@ let timeRemaining = 15 * 60; // 15 minutes in seconds
 // Token mint address
 const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
 
-// Save all data to localStorage
-function saveData() {
-    localStorage.setItem("wheelSlots", JSON.stringify(wheelSlots));
-    localStorage.setItem("queueList", JSON.stringify(queueList));
-    localStorage.setItem("winnersList", JSON.stringify(winnersList));
-    localStorage.setItem("currentUser", currentUser || "");
+// Save all data to Supabase
+async function saveData() {
+    try {
+        // Save wheelSlots (upsert tiap slot)
+        for (let i = 0; i < wheelSlots.length; i++) {
+            const address = wheelSlots[i];
+            await supabaseClient.from('wheel_slots').upsert({
+                slot_index: i,
+                address: address
+            }, { onConflict: 'slot_index' });
+        }
+
+        // Save queueList (hapus dulu, baru insert ulang)
+        await supabaseClient.from('queue_list').delete();
+        for (const addr of queueList) {
+            await supabaseClient.from('queue_list').insert({ address: addr });
+        }
+
+        // Save winnersList (hanya insert baru)
+        // Asumsi winnersList tidak terlalu besar, dan ini akan duplikat, bisa dioptimasi dengan unique constraint di DB
+        for (const winner of winnersList) {
+            await supabaseClient.from('winners_list').upsert({
+                address: winner,
+                timestamp: new Date()
+            }, { onConflict: ['address', 'timestamp'] });
+        }
+
+        // Save currentUser (hanya satu record)
+        await supabaseClient.from('current_user').upsert({ id: 1, address: currentUser });
+
+    } catch (error) {
+        console.error('Failed to save data to Supabase:', error);
+    }
 }
 
-// Load data from localStorage
-function loadData() {
-    const storedSlots = localStorage.getItem("wheelSlots");
-    const storedQueue = localStorage.getItem("queueList");
-    const storedWinners = localStorage.getItem("winnersList");
-    const savedUser = localStorage.getItem("currentUser");
+// Load data from Supabase
+async function loadData() {
+    try {
+        // Load wheel slots
+        let { data: slotsData, error: slotsError } = await supabaseClient
+            .from('wheel_slots')
+            .select('*')
+            .order('slot_index', { ascending: true });
 
-    if (storedSlots) wheelSlots = JSON.parse(storedSlots);
-    if (storedQueue) queueList = JSON.parse(storedQueue);
-    if (storedWinners) winnersList = JSON.parse(storedWinners);
-    if (savedUser) currentUser = savedUser;
+        if (slotsError) throw slotsError;
+
+        wheelSlots = Array(50).fill(null);
+        if (slotsData) {
+            for (const slot of slotsData) {
+                wheelSlots[slot.slot_index] = slot.address;
+            }
+        }
+
+        // Load queue
+        let { data: queueData, error: queueError } = await supabaseClient
+            .from('queue_list')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (queueError) throw queueError;
+        queueList = queueData ? queueData.map(q => q.address) : [];
+
+        // Load winners
+        let { data: winnersData, error: winnersError } = await supabaseClient
+            .from('winners_list')
+            .select('*')
+            .order('timestamp', { ascending: true });
+
+        if (winnersError) throw winnersError;
+        winnersList = winnersData ? winnersData.map(w => w.address) : [];
+
+        // Load currentUser
+        let { data: userData, error: userError } = await supabaseClient
+            .from('current_user')
+            .select('*')
+            .eq('id', 1)
+            .limit(1);
+
+        if (userError) throw userError;
+        currentUser = userData && userData.length > 0 ? userData[0].address : null;
+
+    } catch (error) {
+        console.error('Failed to load data from Supabase:', error);
+    }
 }
 
 // Initialize wheel grid
@@ -121,8 +196,6 @@ async function validateAddress() {
 
         if (isHolder) {
             currentUser = address;
-            localStorage.setItem("isValidUser", "true");
-            localStorage.setItem("currentUser", currentUser);
 
             showMessage('✅ Verification successful! Entering Lucky Wheel...', 'success');
             setTimeout(() => {
@@ -145,14 +218,14 @@ function showMessage(text, type) {
 }
 
 // Enter the wheel page
-function enterWheel() {
+async function enterWheel() {
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('wheelPage').style.display = 'block';
 
     addUserToSystem(currentUser);
     startTimer();
     updateDisplay();
-    saveData();
+    await saveData();
 }
 
 // Add user to system
@@ -232,7 +305,7 @@ function performSpin() {
 
     document.getElementById('wheelGrid').classList.add('spinning');
 
-    setTimeout(() => {
+    setTimeout(async () => {
         const winnerIndex = Math.floor(Math.random() * filledSlots.length);
         const winner = filledSlots[winnerIndex];
         winnersList.push(winner);
@@ -258,27 +331,27 @@ function performSpin() {
 
         document.getElementById('wheelGrid').classList.remove('spinning');
         updateDisplay();
-        saveData();
+        await saveData();
 
         alert(`🎉 Congratulations! Winner: ${formatAddress(winner)}`);
     }, 3000);
 }
 
-// Logout (optional)
-function logout() {
-    localStorage.clear();
-    location.reload();
+// Logout
+async function logout() {
+    try {
+        await supabaseClient.from('current_user').delete().eq('id', 1);
+        location.reload();
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
 }
 
 // DOM Ready
-document.addEventListener('DOMContentLoaded', function () {
-    loadData();
+document.addEventListener('DOMContentLoaded', async function () {
+    await loadData();
 
-    const isValidUser = localStorage.getItem("isValidUser");
-    const savedUser = localStorage.getItem("currentUser");
-
-    if (isValidUser === "true" && savedUser) {
-        currentUser = savedUser;
+    if (currentUser) {
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('wheelPage').style.display = 'block';
         addUserToSystem(currentUser);
@@ -293,4 +366,9 @@ document.addEventListener('DOMContentLoaded', function () {
             validateAddress();
         }
     });
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
 });
