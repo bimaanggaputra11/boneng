@@ -49,7 +49,7 @@ async function saveData() {
     }
 
     for (const winner of winnersList) {
-  await supabase.from('winners_list').upsert(
+  await supabase.from('winners_list').insert(
     { address: winner, timestamp: new Date().toISOString() },
     { onConflict: ['address', 'timestamp'] }
   );
