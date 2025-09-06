@@ -23,13 +23,26 @@ async function updateSpinTimestamp() {
 }
 
 // ✅ Ambil waktu spin dari Supabase
-async function fetchSpinTimestamp() {
+async function getServerTime() {
   const { data, error } = await supabase.rpc('get_current_timestamp');
-if (!error) {
-  spinTimestamp = data.current_timestamp; // simpan timestamp dari server
-  await supabase.from('settings').upsert([{ key: 'last_spin', value: spinTimestamp }], { onConflict: ['key'] });
+  if (error) return Date.now(); // fallback
+  return new Date(data.current_timestamp).getTime();
 }
+
+async function fetchSpinTimestamp() {
+  const { data } = await supabase.from('settings').select('*').eq('key', 'last_spin').maybeSingle();
+  if (data?.value) {
+    spinTimestamp = Date.parse(data.value);
+    const serverTime = await getServerTime();
+    const elapsed = Math.floor((serverTime - spinTimestamp) / 1000);
+    const countdown = 5 * 60 - elapsed;
+    timeRemaining = countdown > 0 ? countdown : 0;
+  } else {
+    await updateSpinTimestamp();
+    timeRemaining = 5 * 60;
+  }
 }
+
 
 async function saveData() {
   try {
