@@ -24,17 +24,11 @@ async function updateSpinTimestamp() {
 
 // ✅ Ambil waktu spin dari Supabase
 async function fetchSpinTimestamp() {
-  const { data } = await supabase.from('settings').select('*').eq('key', 'last_spin').maybeSingle();
-  if (data?.value) {
-    spinTimestamp = parseInt(data.value);
-    const elapsed = Math.floor((Date.now() - spinTimestamp) / 1000);
-    const countdown = 5 * 60 - elapsed;
-    timeRemaining = countdown > 0 ? countdown : 0;
-  } else {
-    // Jika belum ada, inisialisasi
-    await updateSpinTimestamp();
-    timeRemaining = 5 * 60;
-  }
+  const { data, error } = await supabase.rpc('get_current_timestamp');
+if (!error) {
+  spinTimestamp = data.current_timestamp; // simpan timestamp dari server
+  await supabase.from('settings').upsert([{ key: 'last_spin', value: spinTimestamp }], { onConflict: ['key'] });
+}
 }
 
 async function saveData() {
