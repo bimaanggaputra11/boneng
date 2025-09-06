@@ -312,17 +312,19 @@ async function logout() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadData();
-  await fetchSpinTimestamp(); // Ambil waktu spin dari database
+  await fetchSpinTimestamp(); // Ambil waktu spin dari database, set timeRemaining sesuai waktu tersisa
 
   if (currentUser) {
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('wheelPage').style.display = 'block';
     addUserToSystem(currentUser);
-    startTimer();
   }
 
   initializeWheel();
   updateDisplay();
+
+  // Start timer *setelah* fetchSpinTimestamp supaya timer ngga mulai dari 5 menit pas refresh
+  startTimer();
 
   document.getElementById('walletAddress').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') validateAddress();
