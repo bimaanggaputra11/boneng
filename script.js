@@ -99,7 +99,7 @@ function formatAddress(address) {
 
 async function validateHolder(address) {
   try {
-    const res = await fetch('https://mainnet.helius-rpc.com/?api-key=API_KEY', {
+    const res = await fetch('https://mainnet.helius-rpc.com/?api-key=c93e5dea-5c54-48b4-bb7a-9b9aef4cc41c', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
