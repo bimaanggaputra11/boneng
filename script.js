@@ -1,7 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPABASE_URL = 'https://bewuevhfiehsjofvwpbi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJld3VldmhmaWVoc2pvZnZ3cGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjA1MDEsImV4cCI6MjA3MjczNjUwMX0.o7KJ4gkbfZKYy3lvuV63yGM5XCnk5xk4vCLv46hNAII';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJld3VldmhmaWVoc2pvZnZ3cGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjA1MDEsImV4cCI6MjA3MjczNjUwMX0.o7KJ4gkbfZKYy3lvuV63yGM5XCnk5xk4vCLv46hNAII'; // singkat karena panjang
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
@@ -13,11 +13,34 @@ let currentUser = null;
 let spinInterval = null;
 let timeRemaining = 15 * 60;
 
+// ⏱️ Update countdown dari Supabase
+let spinTimestamp = null;
+
+// ✅ Simpan waktu spin ke Supabase
+async function updateSpinTimestamp() {
+  spinTimestamp = Date.now();
+  await supabase.from('settings').upsert([{ key: 'last_spin', value: String(spinTimestamp) }], { onConflict: ['key'] });
+}
+
+// ✅ Ambil waktu spin dari Supabase
+async function fetchSpinTimestamp() {
+  const { data } = await supabase.from('settings').select('*').eq('key', 'last_spin').maybeSingle();
+  if (data?.value) {
+    spinTimestamp = parseInt(data.value);
+    const elapsed = Math.floor((Date.now() - spinTimestamp) / 1000);
+    const countdown = 15 * 60 - elapsed;
+    timeRemaining = countdown > 0 ? countdown : 0;
+  } else {
+    // Jika belum ada, inisialisasi
+    await updateSpinTimestamp();
+    timeRemaining = 15 * 60;
+  }
+}
+
 async function saveData() {
   try {
     for (let i = 0; i < wheelSlots.length; i++) {
-      const address = wheelSlots[i];
-      await supabase.from('wheel_slots').upsert({ slot_index: i, address }, { onConflict: ['slot_index'] });
+      await supabase.from('wheel_slots').upsert({ slot_index: i, address: wheelSlots[i] }, { onConflict: ['slot_index'] });
     }
 
     await supabase.from('queue_list').delete().neq('address', '');
@@ -76,7 +99,7 @@ function formatAddress(address) {
 
 async function validateHolder(address) {
   try {
-    const res = await fetch('https://mainnet.helius-rpc.com/?api-key=c93e5dea-5c54-48b4-bb7a-9b9aef4cc41c', {
+    const res = await fetch('https://mainnet.helius-rpc.com/?api-key=API_KEY', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -176,6 +199,7 @@ function updateWinners() {
 
 function startTimer() {
   if (spinInterval) clearInterval(spinInterval);
+
   spinInterval = setInterval(() => {
     timeRemaining--;
     const min = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
@@ -191,12 +215,13 @@ function startTimer() {
   }, 1000);
 }
 
-function performSpin() {
+async function performSpin() {
   const filled = wheelSlots.filter(Boolean);
   if (filled.length === 0) return;
 
   document.getElementById('wheelGrid').classList.add('spinning');
 
+ 
   setTimeout(async () => {
     const winner = filled[Math.floor(Math.random() * filled.length)];
     winnersList.push(winner);
@@ -219,6 +244,7 @@ function performSpin() {
     }, 100);
 
     document.getElementById('wheelGrid').classList.remove('spinning');
+    await updateSpinTimestamp();  // ⏱️ Update waktu spin agar semua sinkron
     updateDisplay();
     await saveData();
 
@@ -233,6 +259,7 @@ async function logout() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadData();
+  await fetchSpinTimestamp(); // Ambil waktu spin dari database
 
   if (currentUser) {
     document.getElementById('loginPage').style.display = 'none';
@@ -252,5 +279,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (logoutBtn) logoutBtn.addEventListener('click', logout);
 });
 
+// ✅ Expose untuk HTML
 window.validateAddress = validateAddress;
 window.logout = logout;
