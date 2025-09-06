@@ -7,7 +7,7 @@ let spinInterval = null;
 let timeRemaining = 15 * 60; // 15 minutes in seconds
 
 // Token mint address - you can change this
-const TOKEN_MINT = "YOUR_TOKEN_MINT_ADDRESS_HERE";
+const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
 
 // Initialize wheel grid
 function initializeWheel() {
@@ -42,7 +42,7 @@ async function validateHolder(address) {
     
     try {
         // TODO: Replace with actual Helius RPC call
-        const response = await fetch('https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY', {
+        const response = await fetch('https://mainnet.helius-rpc.com/?api-key=c93e5dea-5c54-48b4-bb7a-9b9aef4cc41c', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
