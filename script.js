@@ -11,7 +11,7 @@ let queueList = [];
 let winnersList = [];
 let currentUser = null;
 let spinInterval = null;
-let timeRemaining = 15 * 60;
+let timeRemaining = 1 * 60;
 
 // ⏱️ Update countdown dari Supabase
 let spinTimestamp = null;
@@ -49,8 +49,12 @@ async function saveData() {
     }
 
     for (const winner of winnersList) {
-      await supabase.from('winners_list').insert({ address: winner, timestamp: new Date().toISOString() });
-    }
+  await supabase.from('winners_list').upsert(
+    { address: winner, timestamp: new Date().toISOString() },
+    { onConflict: ['address', 'timestamp'] }
+  );
+}
+
 
     if (currentUser) {
       await supabase.from('current_user').upsert({ id: 1, address: currentUser });
