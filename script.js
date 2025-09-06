@@ -253,18 +253,25 @@ function updateWinners() {
 function startTimer() {
   if (spinInterval) clearInterval(spinInterval);
 
-  spinInterval = setInterval(() => {
+  // Jangan reset timeRemaining di sini, gunakan nilai yg sudah ada dari fetchSpinTimestamp
+  spinInterval = setInterval(async () => {
+    if (timeRemaining <= 0) {
+      clearInterval(spinInterval); // stop timer saat spin
+      await performSpin();
+      await fetchSpinTimestamp(); // ambil waktu spin terbaru dari server
+      startTimer(); // restart timer dengan waktu baru
+      return;
+    }
+
     timeRemaining--;
+
     const min = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
     const sec = (timeRemaining % 60).toString().padStart(2, '0');
     const timeStr = `${min}:${sec}`;
+
     document.getElementById('nextSpinTimer').textContent = timeStr;
     document.getElementById('spinTimer').textContent = `Next spin in: ${timeStr}`;
 
-    if (timeRemaining <= 0) {
-      performSpin();
-      timeRemaining = 5 * 60;
-    }
   }, 1000);
 }
 
@@ -312,7 +319,7 @@ async function logout() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadData();
-  await fetchSpinTimestamp(); // Ambil waktu spin dari database, set timeRemaining sesuai waktu tersisa
+  await fetchSpinTimestamp(); // Pastikan ini selesai dulu dan timeRemaining sudah benar
 
   if (currentUser) {
     document.getElementById('loginPage').style.display = 'none';
@@ -323,7 +330,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeWheel();
   updateDisplay();
 
-  // Start timer *setelah* fetchSpinTimestamp supaya timer ngga mulai dari 5 menit pas refresh
+  // Mulai timer setelah timeRemaining sudah tepat dari fetchSpinTimestamp
   startTimer();
 
   document.getElementById('walletAddress').addEventListener('keypress', function (e) {
