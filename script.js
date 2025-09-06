@@ -6,7 +6,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
 
-let wheelSlots = Array(50).fill(null);
+let wheelSlots = Array(5).fill(null);
 let queueList = [];
 let winnersList = [];
 let currentUser = null;
@@ -92,7 +92,7 @@ winnersList = [...new Set(allWinners)]; // 🔥 Hapus duplikat pakai Set
 
     // ⬅️ KEDUA: Baru load slot dan cek kalau address bukan pemenang
     const { data: slotsData } = await supabase.from('wheel_slots').select('*').order('slot_index', { ascending: true });
-    wheelSlots = Array(50).fill(null);
+    wheelSlots = Array(5).fill(null);
     for (const slot of slotsData) {
       if (!winnersList.includes(slot.address)) {
         wheelSlots[slot.slot_index] = slot.address;
@@ -115,7 +115,7 @@ winnersList = [...new Set(allWinners)]; // 🔥 Hapus duplikat pakai Set
 function initializeWheel() {
   const wheelGrid = document.getElementById('wheelGrid');
   wheelGrid.innerHTML = '';
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 5; i++) {
     const slot = document.createElement('div');
     slot.className = 'wheel-slot';
     slot.id = `slot-${i}`;
