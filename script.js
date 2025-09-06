@@ -1,12 +1,23 @@
-// Import dan inisialisasi Supabase (kalau kamu pake bundler, ini harus di import dari package, kalau di browser pakai script tag terpisah)
-const SUPABASE_URL = 'https://bewuevhfiehsjofvwpbi.supabase.co'; // Ganti dengan URL project kamu
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJld3VldmhmaWVoc2pvZnZ3cGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjA1MDEsImV4cCI6MjA3MjczNjUwMX0.o7KJ4gkbfZKYy3lvuV63yGM5XCnk5xk4vCLv46hNAII'; // Ganti dengan anon key kamu
+// Jika pakai bundler/module system, uncomment ini:
+// import { createClient } from '@supabase/supabase-js';
 
-const supabase = supabase = supabase || null;
-if (!supabase) {
-    window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-const supabaseClient = window.supabase;
+// Kalau di browser tanpa bundler, pastikan sudah include:
+// <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// dan ganti createClient jadi supabase.createClient (lihat di bawah)
+
+// Supabase config
+const SUPABASE_URL = 'https://bewuevhfiehsjofvwpbi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJld3VldmhmaWVoc2pvZnZ3cGJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjA1MDEsImV4cCI6MjA3MjczNjUwMX0.o7KJ4gkbfZKYy3lvuV63yGM5XCnk5xk4vCLv46hNAII';
+
+// Inisialisasi Supabase client
+// Jika pakai bundler:
+// const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Jika di browser tanpa bundler (pastikan sudah include script supabase-js):
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Token mint address
+const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
 
 // Global variables
 let wheelSlots = Array(50).fill(null);
@@ -16,38 +27,30 @@ let currentUser = null;
 let spinInterval = null;
 let timeRemaining = 15 * 60; // 15 minutes in seconds
 
-// Token mint address
-const TOKEN_MINT = "ACbRrERR5GJnADhLhhanxrDCXJzGhyF64SKihbzBpump";
-
 // Save all data to Supabase
 async function saveData() {
     try {
-        // Save wheelSlots (upsert tiap slot)
         for (let i = 0; i < wheelSlots.length; i++) {
             const address = wheelSlots[i];
-            await supabaseClient.from('wheel_slots').upsert({
+            await supabase.from('wheel_slots').upsert({
                 slot_index: i,
                 address: address
             }, { onConflict: 'slot_index' });
         }
 
-        // Save queueList (hapus dulu, baru insert ulang)
-        await supabaseClient.from('queue_list').delete();
+        await supabase.from('queue_list').delete();
         for (const addr of queueList) {
-            await supabaseClient.from('queue_list').insert({ address: addr });
+            await supabase.from('queue_list').insert({ address: addr });
         }
 
-        // Save winnersList (hanya insert baru)
-        // Asumsi winnersList tidak terlalu besar, dan ini akan duplikat, bisa dioptimasi dengan unique constraint di DB
         for (const winner of winnersList) {
-            await supabaseClient.from('winners_list').upsert({
+            await supabase.from('winners_list').upsert({
                 address: winner,
                 timestamp: new Date()
             }, { onConflict: ['address', 'timestamp'] });
         }
 
-        // Save currentUser (hanya satu record)
-        await supabaseClient.from('current_user').upsert({ id: 1, address: currentUser });
+        await supabase.from('current_user').upsert({ id: 1, address: currentUser });
 
     } catch (error) {
         console.error('Failed to save data to Supabase:', error);
@@ -57,8 +60,7 @@ async function saveData() {
 // Load data from Supabase
 async function loadData() {
     try {
-        // Load wheel slots
-        let { data: slotsData, error: slotsError } = await supabaseClient
+        let { data: slotsData, error: slotsError } = await supabase
             .from('wheel_slots')
             .select('*')
             .order('slot_index', { ascending: true });
@@ -72,8 +74,7 @@ async function loadData() {
             }
         }
 
-        // Load queue
-        let { data: queueData, error: queueError } = await supabaseClient
+        let { data: queueData, error: queueError } = await supabase
             .from('queue_list')
             .select('*')
             .order('id', { ascending: true });
@@ -81,8 +82,7 @@ async function loadData() {
         if (queueError) throw queueError;
         queueList = queueData ? queueData.map(q => q.address) : [];
 
-        // Load winners
-        let { data: winnersData, error: winnersError } = await supabaseClient
+        let { data: winnersData, error: winnersError } = await supabase
             .from('winners_list')
             .select('*')
             .order('timestamp', { ascending: true });
@@ -90,8 +90,7 @@ async function loadData() {
         if (winnersError) throw winnersError;
         winnersList = winnersData ? winnersData.map(w => w.address) : [];
 
-        // Load currentUser
-        let { data: userData, error: userError } = await supabaseClient
+        let { data: userData, error: userError } = await supabase
             .from('current_user')
             .select('*')
             .eq('id', 1)
@@ -126,20 +125,18 @@ function initializeWheel() {
     }
 }
 
-// Format address to show first and last few characters
+// Format address
 function formatAddress(address) {
     if (!address) return '';
     return `${address.substring(0, 4)}...${address.substring(address.length - 3)}`;
 }
 
-// Validate if user is token holder
+// Validate token holder via Helius RPC
 async function validateHolder(address) {
     try {
         const response = await fetch('https://mainnet.helius-rpc.com/?api-key=c93e5dea-5c54-48b4-bb7a-9b9aef4cc41c', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 jsonrpc: '2.0',
                 id: 1,
@@ -157,9 +154,7 @@ async function validateHolder(address) {
         if (data.result && data.result.value && data.result.value.length > 0) {
             for (const tokenAccount of data.result.value) {
                 const balance = tokenAccount.account.data.parsed.info.tokenAmount.uiAmount;
-                if (balance > 0) {
-                    return true;
-                }
+                if (balance > 0) return true;
             }
         }
 
@@ -171,7 +166,7 @@ async function validateHolder(address) {
     }
 }
 
-// Validate user input address
+// Validate address input
 async function validateAddress() {
     const addressInput = document.getElementById('walletAddress');
     const messageDiv = document.getElementById('message');
@@ -209,7 +204,7 @@ async function validateAddress() {
     }
 }
 
-// Show message
+// Show message helper
 function showMessage(text, type) {
     const messageDiv = document.getElementById('message');
     const className = type === 'error' ? 'error-message' :
@@ -228,7 +223,7 @@ async function enterWheel() {
     await saveData();
 }
 
-// Add user to system
+// Add user to wheel or queue
 function addUserToSystem(address) {
     if (wheelSlots.includes(address) || queueList.includes(address)) return;
 
@@ -243,7 +238,7 @@ function addUserToSystem(address) {
     saveData();
 }
 
-// Update wheel UI
+// Update UI display
 function updateDisplay() {
     initializeWheel();
     updateStats();
@@ -251,7 +246,7 @@ function updateDisplay() {
     updateWinners();
 }
 
-// Stats UI
+// Update stats UI
 function updateStats() {
     const filledSlots = wheelSlots.filter(slot => slot !== null).length;
     document.getElementById('currentParticipants').textContent = filledSlots;
@@ -259,7 +254,7 @@ function updateStats() {
     document.getElementById('totalWinners').textContent = winnersList.length;
 }
 
-// Queue UI
+// Update queue UI
 function updateQueue() {
     const queueDiv = document.getElementById('queueList');
     queueDiv.innerHTML = queueList.length === 0
@@ -267,7 +262,7 @@ function updateQueue() {
         : queueList.map(addr => `<span class="address-tag">${formatAddress(addr)}</span>`).join('');
 }
 
-// Winners UI
+// Update winners UI
 function updateWinners() {
     const winnersDiv = document.getElementById('winnersList');
     winnersDiv.innerHTML = winnersList.length === 0
@@ -277,7 +272,7 @@ function updateWinners() {
         ).join('');
 }
 
-// Countdown to next spin
+// Start countdown timer
 function startTimer() {
     if (spinInterval) clearInterval(spinInterval);
 
@@ -298,7 +293,7 @@ function startTimer() {
     }, 1000);
 }
 
-// Spin and select winner
+// Perform spin and select winner
 function performSpin() {
     const filledSlots = wheelSlots.filter(slot => slot !== null);
     if (filledSlots.length === 0) return;
@@ -337,10 +332,10 @@ function performSpin() {
     }, 3000);
 }
 
-// Logout
+// Logout function
 async function logout() {
     try {
-        await supabaseClient.from('current_user').delete().eq('id', 1);
+        await supabase.from('current_user').delete().eq('id', 1);
         location.reload();
     } catch (error) {
         console.error('Logout error:', error);

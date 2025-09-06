@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lucky Wheel - Token Holder Only</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
+    <!-- Supabase client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
@@ -17,19 +19,30 @@
         <div id="loginPage" class="login-container">
             <h2>Enter Your Wallet Address</h2>
             <p>Only verified token holders can participate</p>
-            
+
             <div class="input-group">
                 <label for="walletAddress">Solana Wallet Address:</label>
-                <input type="text" id="walletAddress" placeholder="Enter your wallet address..." />
+                <input
+                    type="text"
+                    id="walletAddress"
+                    placeholder="Enter your wallet address..."
+                    autocomplete="off"
+                    spellcheck="false"
+                />
             </div>
-            
+
             <button class="btn" onclick="validateAddress()">Verify & Enter</button>
-            
+
             <div id="message"></div>
         </div>
 
         <!-- Wheel Page -->
-        <div id="wheelPage" class="wheel-container">
+        <div id="wheelPage" class="wheel-container" style="display: none;">
+            <div class="wheel-header-row" style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>🎲 Lucky Wheel (50 Slots)</h2>
+                <button id="logoutBtn" class="btn logout-btn" title="Logout">Logout</button>
+            </div>
+
             <!-- Stats -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -50,13 +63,11 @@
                 </div>
             </div>
 
+            <!-- Spin Timer Display -->
+            <div class="timer" id="spinTimer">Next spin in: 15:00</div>
+
             <!-- Lucky Wheel -->
             <div class="wheel-section">
-                <div class="wheel-header">
-                    <h2>🎲 Lucky Wheel (50 Slots)</h2>
-                    <div class="timer" id="spinTimer">Next spin in: 15:00</div>
-                </div>
-                
                 <div class="wheel-grid" id="wheelGrid">
                     <!-- Wheel slots will be generated here -->
                 </div>
@@ -80,6 +91,6 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" type="module"></script>
 </body>
 </html>
