@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Wheel - Token Holder Only</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 Lucky Wheel</h1>
+            <p>Exclusive for Token Holders Only</p>
+        </div>
+
+        <!-- Login Page -->
+        <div id="loginPage" class="login-container">
+            <h2>Enter Your Wallet Address</h2>
+            <p>Only verified token holders can participate</p>
+            
+            <div class="input-group">
+                <label for="walletAddress">Solana Wallet Address:</label>
+                <input type="text" id="walletAddress" placeholder="Enter your wallet address..." />
+            </div>
+            
+            <button class="btn" onclick="validateAddress()">Verify & Enter</button>
+            
+            <div id="message"></div>
+        </div>
+
+        <!-- Wheel Page -->
+        <div id="wheelPage" class="wheel-container">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Current Participants</h3>
+                    <p id="currentParticipants">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Queue Size</h3>
+                    <p id="queueSize">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Winners</h3>
+                    <p id="totalWinners">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Next Spin In</h3>
+                    <p id="nextSpinTimer">15:00</p>
+                </div>
+            </div>
+
+            <!-- Lucky Wheel -->
+            <div class="wheel-section">
+                <div class="wheel-header">
+                    <h2>🎲 Lucky Wheel (50 Slots)</h2>
+                    <div class="timer" id="spinTimer">Next spin in: 15:00</div>
+                </div>
+                
+                <div class="wheel-grid" id="wheelGrid">
+                    <!-- Wheel slots will be generated here -->
+                </div>
+            </div>
+
+            <!-- Queue -->
+            <div class="queue-section">
+                <h3>📋 Waiting Queue</h3>
+                <div class="address-list" id="queueList">
+                    <p style="color: #999; font-style: italic;">No addresses in queue</p>
+                </div>
+            </div>
+
+            <!-- Winners -->
+            <div class="winners-section">
+                <h3>🏆 Recent Winners</h3>
+                <div class="address-list" id="winnersList">
+                    <p style="color: #999; font-style: italic;">No winners yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
