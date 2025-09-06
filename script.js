@@ -41,6 +41,7 @@ async function fetchSpinTimestamp() {
     await updateSpinTimestamp();
     timeRemaining = 5 * 60;
   }
+  console.log("timeRemaining after fetchSpinTimestamp:", timeRemaining);
 }
 
 
