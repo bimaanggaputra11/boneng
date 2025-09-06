@@ -67,25 +67,31 @@ await supabase.from('winners_list').insert({
 
 async function loadData() {
   try {
-    const { data: slotsData } = await supabase.from('wheel_slots').select('*').order('slot_index', { ascending: true });
-    wheelSlots = Array(50).fill(null);
-    for (const slot of slotsData) {
-        if (!winnerlist.includes(slotaddress)) wheelSlots[slot.slot_index] = slot.address;
-    }
-
-
-    const { data: queueData } = await supabase.from('queue_list').select('*').order('id', { ascending: true });
-    queueList = queueData ? queueData.map(q => q.address) : [];
-
+    // ⬅️ PERTAMA: Ambil data pemenang dulu
     const { data: winnersData } = await supabase.from('winners_list').select('*').order('timestamp', { ascending: true });
     winnersList = winnersData ? winnersData.map(w => w.address) : [];
 
+    // ⬅️ KEDUA: Baru load slot dan cek kalau address bukan pemenang
+    const { data: slotsData } = await supabase.from('wheel_slots').select('*').order('slot_index', { ascending: true });
+    wheelSlots = Array(50).fill(null);
+    for (const slot of slotsData) {
+      if (!winnersList.includes(slot.address)) {
+        wheelSlots[slot.slot_index] = slot.address;
+      }
+    }
+
+    // ⬅️ Ketiga: Load queue
+    const { data: queueData } = await supabase.from('queue_list').select('*').order('id', { ascending: true });
+    queueList = queueData ? queueData.map(q => q.address) : [];
+
+    // ⬅️ Keempat: Ambil current user
     const { data: userData } = await supabase.from('current_user').select('address').eq('id', 1).maybeSingle();
     currentUser = userData?.address || null;
   } catch (error) {
     console.error('❌ Failed to load data:', error);
   }
 }
+
 
 function initializeWheel() {
   const wheelGrid = document.getElementById('wheelGrid');
