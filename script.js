@@ -57,10 +57,14 @@ async function saveData() {
     .maybeSingle();
 
   if (!existing) {
-    await supabase.from('winners_list').insert({
-      address: winner,
-      timestamp: new Date().toISOString()
-    });
+    await supabase.from('winners_list').upsert(
+  winnersList.map(addr => ({
+    address: addr,
+    timestamp: new Date().toISOString()
+  })),
+  { onConflict: ['address'] }
+);
+
   }
 }
 
@@ -77,8 +81,14 @@ async function saveData() {
 async function loadData() {
   try {
     // ⬅️ PERTAMA: Ambil data pemenang dulu
-    const { data: winnersData } = await supabase.from('winners_list').select('*').order('timestamp', { ascending: true });
-    winnersList = winnersData ? winnersData.map(w => w.address) : [];
+    const { data: winnersData } = await supabase
+  .from('winners_list')
+  .select('*')
+  .order('timestamp', { ascending: true });
+
+const allWinners = winnersData ? winnersData.map(w => w.address) : [];
+winnersList = [...new Set(allWinners)]; // 🔥 Hapus duplikat pakai Set
+
 
     // ⬅️ KEDUA: Baru load slot dan cek kalau address bukan pemenang
     const { data: slotsData } = await supabase.from('wheel_slots').select('*').order('slot_index', { ascending: true });
