@@ -23,27 +23,19 @@ async function updateSpinTimestamp() {
 }
 
 // ✅ Ambil waktu spin dari Supabase
-async function getServerTime() {
-  const { data, error } = await supabase.rpc('get_current_timestamp');
-  if (error) return Date.now(); // fallback
-  return new Date(data.current_timestamp).getTime();
-}
-
 async function fetchSpinTimestamp() {
   const { data } = await supabase.from('settings').select('*').eq('key', 'last_spin').maybeSingle();
   if (data?.value) {
-    spinTimestamp = Date.parse(data.value);
-    const serverTime = await getServerTime();
-    const elapsed = Math.floor((serverTime - spinTimestamp) / 1000);
+    spinTimestamp = parseInt(data.value);
+    const elapsed = Math.floor((Date.now() - spinTimestamp) / 1000);
     const countdown = 5 * 60 - elapsed;
     timeRemaining = countdown > 0 ? countdown : 0;
   } else {
+    // Jika belum ada, inisialisasi
     await updateSpinTimestamp();
     timeRemaining = 5 * 60;
   }
-  console.log("timeRemaining after fetchSpinTimestamp:", timeRemaining);
 }
-
 
 async function saveData() {
   try {
@@ -254,25 +246,18 @@ function updateWinners() {
 function startTimer() {
   if (spinInterval) clearInterval(spinInterval);
 
-  // Jangan reset timeRemaining di sini, gunakan nilai yg sudah ada dari fetchSpinTimestamp
-  spinInterval = setInterval(async () => {
-    if (timeRemaining <= 0) {
-      clearInterval(spinInterval); // stop timer saat spin
-      await performSpin();
-      await fetchSpinTimestamp(); // ambil waktu spin terbaru dari server
-      startTimer(); // restart timer dengan waktu baru
-      return;
-    }
-
+  spinInterval = setInterval(() => {
     timeRemaining--;
-
     const min = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
     const sec = (timeRemaining % 60).toString().padStart(2, '0');
     const timeStr = `${min}:${sec}`;
-
     document.getElementById('nextSpinTimer').textContent = timeStr;
     document.getElementById('spinTimer').textContent = `Next spin in: ${timeStr}`;
 
+    if (timeRemaining <= 0) {
+      performSpin();
+      timeRemaining = 5 * 60;
+    }
   }, 1000);
 }
 
@@ -320,19 +305,17 @@ async function logout() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadData();
-  await fetchSpinTimestamp(); // Pastikan ini selesai dulu dan timeRemaining sudah benar
+  await fetchSpinTimestamp(); // Ambil waktu spin dari database
 
   if (currentUser) {
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('wheelPage').style.display = 'block';
     addUserToSystem(currentUser);
+    startTimer();
   }
 
   initializeWheel();
   updateDisplay();
-
-  // Mulai timer setelah timeRemaining sudah tepat dari fetchSpinTimestamp
-  startTimer();
 
   document.getElementById('walletAddress').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') validateAddress();
