@@ -43,10 +43,15 @@ async function saveData() {
       await supabase.from('wheel_slots').upsert({ slot_index: i, address: wheelSlots[i] }, { onConflict: ['slot_index'] });
     }
 
-    await supabase.from('queue_list').delete().neq('address', '');
-    for (const addr of queueList) {
-      await supabase.from('queue_list').insert({ address: addr });
-    }
+    // Hapus semua queue
+await supabase.from('queue_list').delete().neq('address', '');
+
+// Insert ulang tanpa duplicate
+const uniqueQueue = [...new Set(queueList)];
+for (const addr of uniqueQueue) {
+  await supabase.from('queue_list').insert({ address: addr });
+}
+
 
     for (const winner of winnersList) {
   // Cek apakah sudah ada di Supabase
@@ -101,7 +106,9 @@ winnersList = [...new Set(allWinners)]; // 🔥 Hapus duplikat pakai Set
 
     // ⬅️ Ketiga: Load queue
     const { data: queueData } = await supabase.from('queue_list').select('*').order('id', { ascending: true });
-    queueList = queueData ? queueData.map(q => q.address) : [];
+const allQueue = queueData ? queueData.map(q => q.address) : [];
+queueList = [...new Set(allQueue)]; // Hilangkan duplicate dengan Set
+
 
     // ⬅️ Keempat: Ambil current user
     const { data: userData } = await supabase.from('current_user').select('address').eq('id', 1).maybeSingle();
